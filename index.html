@@ -1,80 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Museo ADIRIS - Realidad Aumentada</title>
+    
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
     
-    <script>
-        // COMPONENTE PARA DETECTAR EL CLIC DE FORMA ROBUSTA
-        AFRAME.registerComponent('gestor-clic', {
-            schema: {
-                titulo: {type: 'string'},
-                texto: {type: 'string'}
-            },
-            init: function () {
-                // Escuchamos el evento 'click' que genera el raycaster de A-Frame
-                this.el.addEventListener('click', e => {
-                    console.log("Clic detectado en:", this.data.titulo);
-                    // Llamamos a la función de la ventana para mostrar la tarjeta
-                    window.abrirTarjeta(this.data.titulo, this.data.texto);
-                    
-                    // FEEDBACK VISUAL: El botón se hace pequeño un momento para confirmar el toque
-                    this.el.setAttribute('animation', {
-                        property: 'scale',
-                        to: '1.2 1.2 1.2',
-                        dur: 100,
-                        dir: 'alternate',
-                        loop: 1
-                    });
-                });
-            }
-        });
-    </script>
-
     <style>
-        body { margin: 0; overflow: hidden; background: black; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
 
         /* Capa de Interfaz */
-        #capa-ui {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 999; pointer-events: none; font-family: sans-serif;
+        #ui-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            pointer-events: none;
         }
 
+        /* Tarjeta de Información */
         #info-card {
-            position: absolute; bottom: -350px; left: 50%; transform: translateX(-50%);
-            width: 85%; background: white; padding: 25px; border-radius: 20px 20px 0 0;
-            transition: bottom 0.5s cubic-bezier(0, 0.5, 0.5, 1);
-            pointer-events: auto; /* IMPORTANTE: Para poder tocar el botón cerrar */
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            position: absolute;
+            bottom: -400px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            pointer-events: auto;
         }
 
-        #info-card.visible { bottom: 0; }
+        #info-card.active { bottom: 0; }
 
-        .btn-cerrar {
-            background: #222; color: white; padding: 12px; text-align: center;
-            border-radius: 10px; cursor: pointer; margin-top: 15px; font-weight: bold;
+        .tag {
+            background: #FFD700; color: #000; padding: 4px 8px;
+            font-size: 10px; font-weight: bold; border-radius: 4px;
         }
 
-        #pantalla-carga {
+        /* Pantalla de carga */
+        #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; color: gold; display: flex; 
-            justify-content: center; align-items: center; z-index: 1000;
+            background: #111; color: white; display: flex; 
+            flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 200;
         }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #FFD700;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
 
-    <div id="pantalla-carga">
-        <p>Preparando Realidad Aumentada...</p>
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>Iniciando Experiencia...</p>
     </div>
 
-    <div id="capa-ui">
+    <div id="ui-overlay">
         <div id="info-card">
-            <h2 id="titulo-obra" style="margin:0; color:#111;"></h2>
-            <p id="texto-obra" style="color:#444; font-size: 1.1em; line-height: 1.5;"></p>
-            <div class="btn-cerrar" onclick="cerrarTarjeta()">ENTENDIDO</div>
+            <span class="tag">Obra Detectada</span>
+            <h2 id="obra-titulo" style="margin: 10px 0; color: #222;">Cargando Obra...</h2>
+            <p id="obra-desc" style="color: #444; line-height: 1.5;">Mantén el enfoque para leer.</p>
         </div>
     </div>
 
@@ -85,51 +83,38 @@
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
-        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            
-            <a-circle 
-                class="clickable" 
-                gestor-clic="titulo: El Gran Rostro; texto: Esta obra fue creada en el siglo XIX. Note el uso de sombras para dar profundidad."
-                position="-0.25 0 0.1" 
-                radius="0.12" 
-                color="#FFD700"
-                opacity="0.8">
-            </a-circle>
-
-            <a-circle 
-                class="clickable" 
-                gestor-clic="titulo: Paisaje de Fondo; texto: El autor pintó estas colinas basándose en sus viajes por Italia."
-                position="0.3 0 0.1" 
-                radius="0.12" 
-                color="#00FFCC"
-                opacity="0.8">
-            </a-circle>
-
-        </a-entity>
+        <a-entity id="target-cuadro" mindar-image-target="targetIndex: 0">
+            </a-entity>
     </a-scene>
 
     <script>
         const card = document.getElementById('info-card');
-        const h2 = document.getElementById('titulo-obra');
-        const p = document.getElementById('texto-obra');
-        const carga = document.getElementById('pantalla-carga');
+        const titulo = document.getElementById('obra-titulo');
+        const desc = document.getElementById('obra-desc');
+        const loading = document.getElementById('loading-screen');
+        const target = document.getElementById('target-cuadro');
 
-        // Función que llama el componente 3D
-        window.abrirTarjeta = function(titulo, texto) {
-            h2.innerText = titulo;
-            p.innerText = texto;
-            card.classList.add('visible');
+        // Datos que se mostrarán
+        const datosMuseo = {
+            titulo: "Riquezas del Museo",
+            descripcion: "Has detectado una pieza histórica. Esta obra representa la fusión de culturas y técnicas artísticas de la época."
         };
 
-        window.cerrarTarjeta = function() {
-            card.classList.remove('visible');
-        };
+        // Eventos de MindAR
+        target.addEventListener("targetFound", () => {
+            titulo.innerText = datosMuseo.titulo;
+            desc.innerText = datosMuseo.descripcion;
+            card.classList.add('active');
+        });
 
-        // Quitar pantalla de carga
+        target.addEventListener("targetLost", () => {
+            card.classList.remove('active');
+        });
+
         document.querySelector('a-scene').addEventListener("arReady", () => {
-            carga.style.display = 'none';
+            loading.style.display = 'none';
         });
     </script>
 </body>
