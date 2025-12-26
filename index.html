@@ -1,69 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
     
-    <script>
-        // REGISTRAMOS EL COMPONENTE ANTES DE LA ESCENA
-        AFRAME.registerComponent('interactivo', {
-            schema: {
-                titulo: {type: 'string'},
-                mensaje: {type: 'string'}
-            },
-            init: function () {
-                // Escuchamos el evento 'click' directamente en el objeto 3D
-                this.el.addEventListener('click', () => {
-                    console.log("Clic detectado en: " + this.data.titulo);
-                    // Llamamos a la función global para mostrar la tarjeta
-                    window.showInfo(this.data.titulo, this.data.mensaje);
-                });
-                
-                // Feedback visual opcional: Cambia de escala al tocar (para saber que funcionó)
-                this.el.addEventListener('mousedown', () => {
-                    this.el.setAttribute('scale', '0.8 0.8 0.8');
-                });
-                this.el.addEventListener('mouseup', () => {
-                    this.el.setAttribute('scale', '1 1 1');
-                });
-            }
-        });
-    </script>
-
     <style>
+        /* FORZAR QUE EL HTML ESTÉ SIEMPRE ARRIBA */
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100; /* Prioridad máxima */
+            pointer-events: none; /* Deja que los clics pasen al 3D si no hay nada activo */
+        }
+
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #1a1a1a; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 1000;
-            color: white; font-family: sans-serif; transition: opacity 0.5s;
+            background: #111; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; pointer-events: auto;
+            color: white; font-family: sans-serif; z-index: 200;
         }
-        #loading-overlay.hidden { display: none; }
 
         #info-card {
-            position: fixed; bottom: -200px; left: 50%; transform: translateX(-50%);
-            width: 80%; background: white; padding: 20px; border-radius: 15px 15px 0 0;
-            transition: bottom 0.4s; z-index: 999; font-family: sans-serif;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+            position: absolute; bottom: -300px; left: 50%; transform: translateX(-50%);
+            width: 85%; background: white; padding: 20px; border-radius: 15px 15px 0 0;
+            transition: all 0.4s ease; font-family: sans-serif;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); pointer-events: auto; /* Permite tocar el botón cerrar */
         }
+
         #info-card.active { bottom: 0; }
-        .close-btn { float: right; color: red; cursor: pointer; font-weight: bold; }
+
+        .close-btn { 
+            background: #ff4444; color: white; padding: 10px; 
+            border-radius: 5px; float: right; cursor: pointer; font-size: 12px;
+        }
+
+        /* Hacer que la escena ocupe todo sin romper el layout */
+        a-scene { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     </style>
 </head>
 
-<body>
-    <div id="loading-overlay">
-        <h2>Cargando Museo AR...</h2>
-    </div>
+<body style="margin: 0; overflow: hidden;">
 
-    <div id="info-card">
-        <span class="close-btn" onclick="closeInfo()">CERRAR</span>
-        <h3 id="info-title"></h3>
-        <p id="info-text"></p>
+    <div id="ui-container">
+        <div id="loading-overlay">
+            <div style="border: 5px solid #f3f3f3; border-top: 5px solid #FFD700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+            <p>Cargando Museo ADIRIS...</p>
+        </div>
+
+        <div id="info-card">
+            <div class="close-btn" onclick="closeInfo()">CERRAR</div>
+            <h3 id="info-title" style="color: #333;"></h3>
+            <p id="info-text" style="color: #666;"></p>
+        </div>
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./tu_cuadro.mind;" 
+        mindar-image="imageTargetSrc: ./tu_cuadro.mind; uiScanning: no;" 
         embedded
         color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights" 
@@ -73,23 +69,10 @@
         <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            
-            <a-circle 
-                class="clickable"
-                interactivo="titulo: El Rostro; mensaje: Detalle pintado en 1890 con técnica de óleo sobre lienzo."
-                position="-0.2 0.2 0.1" 
-                radius="0.08" 
-                color="#FFD700">
-            </a-circle>
-
-            <a-circle 
-                class="clickable"
-                interactivo="titulo: El Paisaje; mensaje: Las colinas representan el atardecer en la campiña italiana."
-                position="0.3 -0.2 0.1" 
-                radius="0.08" 
-                color="#00FFCC">
-            </a-circle>
-
+            <a-circle class="clickable" position="-0.2 0.2 0.1" radius="0.1" color="#FFD700"
+                onclick="showInfo('El Rostro', 'Técnica de óleo detallada.')"></a-circle>
+            <a-circle class="clickable" position="0.3 -0.2 0.1" radius="0.1" color="#00FFCC"
+                onclick="showInfo('El Paisaje', 'Representación de la Toscana.')"></a-circle>
         </a-entity>
     </a-scene>
 
@@ -97,21 +80,28 @@
         const card = document.getElementById('info-card');
         const title = document.getElementById('info-title');
         const text = document.getElementById('info-text');
+        const overlay = document.getElementById('loading-overlay');
 
-        // Función global
-        window.showInfo = function(t, m) {
+        function showInfo(t, m) {
+            console.log("Mostrando:", t); // Para depurar en consola
             title.innerText = t;
             text.innerText = m;
             card.classList.add('active');
-        };
+        }
 
         function closeInfo() {
             card.classList.remove('active');
         }
 
+        // Quitar carga cuando la cámara inicie
         document.querySelector('a-scene').addEventListener("arReady", () => {
-            document.getElementById('loading-overlay').classList.add('hidden');
+            overlay.style.display = 'none';
         });
+
+        // Animación simple del spinner
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
