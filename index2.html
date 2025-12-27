@@ -6,76 +6,66 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-three.prod.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; background: #222; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
         #container { width: 100vw; height: 100vh; }
-        /* Consola de errores en pantalla para el celular */
-        #debug-log { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: rgba(0,0,0,0.8); color: #0f0; 
-            font-family: monospace; font-size: 10px; 
-            max-height: 100px; overflow-y: auto; z-index: 1000; 
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; color: white; display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body>
-    <div id="debug-log">Iniciando sistema...<br></div>
+    <div id="loading">Iniciando motor Three.js...</div>
     <div id="container"></div>
 
     <script>
-        // Función para escribir errores en la pantalla del celular
-        function log(msg) {
-            document.getElementById('debug-log').innerHTML += msg + "<br>";
-            console.log(msg);
+        // Verificamos si la librería cargó antes de empezar
+        const start = async () => {
+            if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.MindARThree) {
+                document.getElementById('loading').innerHTML = "Error: No se cargó la librería de MindAR para Three.js";
+                console.error("Librería MindAR no detectada");
+                return;
+            }
+
+            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+                container: document.querySelector("#container"),
+                imageTargetSrc: './targets.mind',
+            });
+
+            const {renderer, scene, camera} = mindarThree;
+
+            // Iluminación básica
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+
+            // Añadir ancla para el Cuadro 0 (Espacio)
+            const anchor0 = mindarThree.addAnchor(0);
+            const geometry0 = new THREE.PlaneGeometry(1, 1);
+            const material0 = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: 0.5});
+            const mesh0 = new THREE.Mesh(geometry0, material0);
+            anchor0.group.add(mesh0);
+
+            // Añadir ancla para el Cuadro 1 (Playa)
+            const anchor1 = mindarThree.addAnchor(1);
+            const geometry1 = new THREE.TorusKnotGeometry(0.3, 0.1, 100, 16);
+            const material1 = new THREE.MeshNormalMaterial();
+            const mesh1 = new THREE.Mesh(geometry1, material1);
+            anchor1.group.add(mesh1);
+
+            // Bucle de renderizado
+            renderer.setAnimationLoop(() => {
+                mesh1.rotation.x += 0.01;
+                mesh1.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            });
+
+            await mindarThree.start();
+            document.getElementById('loading').style.display = 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const start = async () => {
-                try {
-                    log("Cargando MindAR...");
-                    const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                        container: document.querySelector("#container"),
-                        imageTargetSrc: './targets.mind',
-                    });
-
-                    const {renderer, scene, camera} = mindarThree;
-
-                    // Luz necesaria para Three.js
-                    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-                    scene.add(light);
-
-                    // Configurar Cuadro 0 (Espacio)
-                    const anchor0 = mindarThree.addAnchor(0);
-                    const geometry0 = new THREE.PlaneGeometry(1, 1);
-                    const material0 = new THREE.MeshBasicMaterial({color: 0x0000ff, transparent: true, opacity: 0.5});
-                    const plane0 = new THREE.Mesh(geometry0, material0);
-                    anchor0.group.add(plane0);
-
-                    anchor0.onTargetFound = () => log("¡Cuadro Espacio Detectado!");
-
-                    // Configurar Cuadro 1 (Playa)
-                    const anchor1 = mindarThree.addAnchor(1);
-                    const geometry1 = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-                    const material1 = new THREE.MeshStandardMaterial({color: 0xffff00});
-                    const cube1 = new THREE.Mesh(geometry1, material1);
-                    anchor1.group.add(cube1);
-
-                    anchor1.onTargetFound = () => log("¡Cuadro Playa Detectado!");
-
-                    log("Esperando acceso a la cámara...");
-                    await mindarThree.start();
-                    log("AR Iniciado correctamente.");
-
-                    renderer.setAnimationLoop(() => {
-                        cube1.rotation.y += 0.01;
-                        renderer.render(scene, camera);
-                    });
-
-                } catch (err) {
-                    log("ERROR CRÍTICO: " + err.message);
-                }
-            }
-            start();
-        });
+        start();
     </script>
 </body>
 </html>
