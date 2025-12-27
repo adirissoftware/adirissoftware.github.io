@@ -1,71 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-three.prod.js"></script>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Museo ADIRIS - Experiencia AR</title>
+    <script src="./libs/aframe.min.js"></script>
+    <script src="./libs/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        #container { width: 100vw; height: 100vh; }
-        #info { position: fixed; top: 10px; width: 100%; text-align: center; color: white; z-index: 10; font-family: sans-serif; pointer-events: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        #ui-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+        
+        #info-card {
+            position: absolute; bottom: -400px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 400px; background: rgba(255, 255, 255, 0.95);
+            padding: 25px; border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); pointer-events: auto;
+        }
+        #info-card.active { bottom: 0; }
+        
+        .tag { background: #FFD700; color: #000; padding: 4px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; text-transform: uppercase; }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-top: 4px solid #FFD700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
+
 <body>
-    <div id="info">Busca el cuadro del espacio o la playa</div>
-    <div id="container"></div>
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>Cargando Galería Interactiva...</p>
+    </div>
+
+    <div id="ui-overlay">
+        <div id="info-card">
+            <span id="obra-tag" class="tag">Espacio Exterior</span>
+            <h2 id="obra-titulo" style="margin: 10px 0; color: #111;">Título</h2>
+            <p id="obra-desc" style="color: #444; line-height: 1.6; font-size: 15px;"></p>
+            <div style="font-size: 10px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">ADIRIS Software Solutions</div>
+        </div>
+    </div>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; uiScanning: no;" color-space="sRGB"
+        renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+            <a-plane color="#4B0082" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
+        <a-entity id="target-1" mindar-image-target="targetIndex: 1">
+            <a-plane color="#FFD700" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
+        <a-entity id="target-2" mindar-image-target="targetIndex: 2">
+            <a-plane color="#0ed145" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
+    </a-scene>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const start = async() => {
-                // 1. INICIALIZAR MINDAR PARA THREE.JS
-                const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                    container: document.querySelector("#container"),
-                    imageTargetSrc: './targets.mind', // Tu archivo de entrenamiento
-                });
+        const card = document.getElementById('info-card');
+        const loading = document.getElementById('loading-screen');
+        const tag = document.getElementById('obra-tag');
 
-                const {renderer, scene, camera} = mindarThree;
-
-                // 2. CREAR LUCES (En Three.js las luces son manuales)
-                const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-                scene.add(light);
-
-                // 3. CONFIGURAR TARGET 0 (Espacio)
-                const anchor0 = mindarThree.addAnchor(0);
-                const geometry0 = new THREE.PlaneGeometry(1, 1);
-                const material0 = new THREE.MeshBasicMaterial({color: 0x4B0082, transparent: true, opacity: 0.5});
-                const plane0 = new THREE.Mesh(geometry0, material0);
-                anchor0.group.add(plane0); // El objeto se añade al "grupo" del ancla
-
-                // Eventos de detección
-                anchor0.onTargetFound = () => {
-                    document.getElementById('info').innerHTML = "DETECTADO: Espacio Exterior";
-                };
-                anchor0.onTargetLost = () => {
-                    document.getElementById('info').innerHTML = "Buscando...";
-                };
-
-                // 4. CONFIGURAR TARGET 1 (Playa)
-                const anchor1 = mindarThree.addAnchor(1);
-                const geometry1 = new THREE.BoxGeometry(0.5, 0.5, 0.5); // Un cubo en lugar de plano
-                const material1 = new THREE.MeshStandardMaterial({color: 0xFFD700});
-                const cube1 = new THREE.Mesh(geometry1, material1);
-                anchor1.group.add(cube1);
-
-                anchor1.onTargetFound = () => {
-                    document.getElementById('info').innerHTML = "DETECTADO: Día en la Playa";
-                };
-
-                // 5. BUCLE DE ANIMACIÓN (Aquí controlas el movimiento)
-                renderer.setAnimationLoop(() => {
-                    cube1.rotation.y += 0.02; // El cubo de la playa gira solo
-                    renderer.render(scene, camera);
-                });
-
-                // 6. ARRANCAR CÁMARA Y AR
-                await mindarThree.start();
+        // Base de datos de tus dos cuadros
+        const obras = [
+            {
+                tag: "Cosmos e Infinito",
+                titulo: "Exploración Espacial",
+                descripcion: "Este cuadro representa la inmensidad del universo. Los colores fríos simbolizan el vacío estelar, mientras que las luces brillantes nos recuerdan que estamos hechos de polvo de estrellas."
+            },
+            {
+                tag: "Naturaleza y Relax",
+                titulo: "Un Día en la Playa",
+                descripcion: "Siente el calor del sol y la brisa marina. Esta obra captura la esencia de un verano eterno, utilizando tonos cálidos para transmitir tranquilidad y el movimiento rítmico de las olas."
+            },
+            {
+                tag: "Personalidades",
+                titulo: "Grisel Valdes Seguen",
+                descripcion: "Nacida en 1978, esposa de Joazmin Iribar Marin y madre de Octavio Iribar Valdes y Ester Iribar Valdes"
             }
-            start();
+        ];
+
+        function mostrarInfo(index) {
+            tag.innerText = obras[index].tag;
+            document.getElementById('obra-titulo').innerText = obras[index].titulo;
+            document.getElementById('obra-desc').innerText = obras[index].descripcion;
+            card.classList.add('active');
+        }
+
+        function ocultarInfo() {
+            card.classList.remove('active');
+        }
+
+        // Eventos para Cuadro 0 (Espacio)
+        const t0 = document.getElementById('target-0');
+        t0.addEventListener("targetFound", () => mostrarInfo(0));
+        t0.addEventListener("targetLost", ocultarInfo);
+
+        // Eventos para Cuadro 1 (Playa)
+        const t1 = document.getElementById('target-1');
+        t1.addEventListener("targetFound", () => mostrarInfo(1));
+        t1.addEventListener("targetLost", ocultarInfo);
+
+        // Eventos para Cuadro 2 (Personalidad)
+        const t2 = document.getElementById('target-2');
+        t2.addEventListener("targetFound", () => mostrarInfo(2));
+        t2.addEventListener("targetLost", ocultarInfo);
+
+        document.querySelector('a-scene').addEventListener("arReady", () => {
+            loading.style.display = 'none';
         });
     </script>
 </body>
