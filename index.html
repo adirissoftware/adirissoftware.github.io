@@ -59,6 +59,12 @@
             </a-plane>
         </a-entity>
 
+        <a-entity id="target-2" mindar-image-target="targetIndex: 2">
+            <a-plane color="#0ed145" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
     </a-scene>
 
     <script>
@@ -77,6 +83,11 @@
                 tag: "Naturaleza y Relax",
                 titulo: "Un Día en la Playa",
                 descripcion: "Siente el calor del sol y la brisa marina. Esta obra captura la esencia de un verano eterno, utilizando tonos cálidos para transmitir tranquilidad y el movimiento rítmico de las olas."
+            },
+            {
+                tag: "Personalidades",
+                titulo: "Grisel Valdes Seguen",
+                descripcion: "Nacida en 1978, esposa de Joazmin Iribar Marin y madre de Octavio Iribar Valdes y Ester Iribar Valdes"
             }
         ];
 
@@ -99,6 +110,11 @@
         // Eventos para Cuadro 1 (Playa)
         const t1 = document.getElementById('target-1');
         t1.addEventListener("targetFound", () => mostrarInfo(1));
+        t1.addEventListener("targetLost", ocultarInfo);
+
+        // Eventos para Cuadro 2 (Personalidad)
+        const t2 = document.getElementById('target-2');
+        t1.addEventListener("targetFound", () => mostrarInfo(2));
         t1.addEventListener("targetLost", ocultarInfo);
 
         document.querySelector('a-scene').addEventListener("arReady", () => {
