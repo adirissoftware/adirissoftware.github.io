@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-three.prod.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #container { width: 100vw; height: 100vh; }
+        #info { position: fixed; top: 10px; width: 100%; text-align: center; color: white; z-index: 10; font-family: sans-serif; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="info">Busca el cuadro del espacio o la playa</div>
+    <div id="container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const start = async() => {
+                // 1. INICIALIZAR MINDAR PARA THREE.JS
+                const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+                    container: document.querySelector("#container"),
+                    imageTargetSrc: './targets.mind', // Tu archivo de entrenamiento
+                });
+
+                const {renderer, scene, camera} = mindarThree;
+
+                // 2. CREAR LUCES (En Three.js las luces son manuales)
+                const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+                scene.add(light);
+
+                // 3. CONFIGURAR TARGET 0 (Espacio)
+                const anchor0 = mindarThree.addAnchor(0);
+                const geometry0 = new THREE.PlaneGeometry(1, 1);
+                const material0 = new THREE.MeshBasicMaterial({color: 0x4B0082, transparent: true, opacity: 0.5});
+                const plane0 = new THREE.Mesh(geometry0, material0);
+                anchor0.group.add(plane0); // El objeto se añade al "grupo" del ancla
+
+                // Eventos de detección
+                anchor0.onTargetFound = () => {
+                    document.getElementById('info').innerHTML = "DETECTADO: Espacio Exterior";
+                };
+                anchor0.onTargetLost = () => {
+                    document.getElementById('info').innerHTML = "Buscando...";
+                };
+
+                // 4. CONFIGURAR TARGET 1 (Playa)
+                const anchor1 = mindarThree.addAnchor(1);
+                const geometry1 = new THREE.BoxGeometry(0.5, 0.5, 0.5); // Un cubo en lugar de plano
+                const material1 = new THREE.MeshStandardMaterial({color: 0xFFD700});
+                const cube1 = new THREE.Mesh(geometry1, material1);
+                anchor1.group.add(cube1);
+
+                anchor1.onTargetFound = () => {
+                    document.getElementById('info').innerHTML = "DETECTADO: Día en la Playa";
+                };
+
+                // 5. BUCLE DE ANIMACIÓN (Aquí controlas el movimiento)
+                renderer.setAnimationLoop(() => {
+                    cube1.rotation.y += 0.02; // El cubo de la playa gira solo
+                    renderer.render(scene, camera);
+                });
+
+                // 6. ARRANCAR CÁMARA Y AR
+                await mindarThree.start();
+            }
+            start();
+        });
+    </script>
+</body>
+</html>
