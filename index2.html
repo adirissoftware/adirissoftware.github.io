@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADIRIS - Three.js AR</title>
+    <title>ADIRIS - Three.js AR Pro</title>
 
     <script src="./libs/three.min.js"></script>
     <script src="./libs/mindar-image-three.prod.js"></script>
@@ -12,8 +12,19 @@
         body { margin: 0; overflow: hidden; background-color: #000; }
         #container { width: 100vw; height: 100vh; }
         #error-msg { 
-            position: fixed; top: 50%; width: 100%; text-align: center; 
-            color: white; font-family: sans-serif; display: none; 
+            position: fixed; 
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; 
+            text-align: center; 
+            color: white; 
+            font-family: sans-serif; 
+            background: rgba(255, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none; 
+            z-index: 1000;
         }
     </style>
 </head>
@@ -22,16 +33,31 @@
     <div id="container"></div>
 
     <script>
+        // 1. Función para mostrar errores visuales
+        const reportarError = (msg) => {
+            const el = document.getElementById('error-msg');
+            el.style.display = "block";
+            el.innerHTML = `❌ ${msg}`;
+        };
+
         const start = async () => {
-            // VERIFICACIÓN DE SEGURIDAD
+            console.log("Comprobando librerías...");
+
+            // 2. Verificamos Three.js (Debe estar cargado primero)
+            if (!window.THREE) {
+                reportarError("Falta cargar 'three.min.js'. Revisa la carpeta libs.");
+                return;
+            }
+
+            // 3. Verificamos MindAR con reintento automático
             if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.MindARThree) {
-                const msg = document.getElementById('error-msg');
-                msg.style.display = "block";
-                msg.innerHTML = "❌ Error: No se encontró la librería 'mindar-image-three.prod.js' en la carpeta libs.";
+                console.log("MindAR no detectado aún. Reintentando en 500ms...");
+                setTimeout(start, 500); 
                 return;
             }
 
             try {
+                console.log("Librerías OK. Iniciando motor MindAR...");
                 const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                     container: document.querySelector("#container"),
                     imageTargetSrc: './targets.mind',
@@ -39,41 +65,46 @@
 
                 const {renderer, scene, camera} = mindarThree;
 
-                // 1. Iluminación
+                // 4. Configuración de Iluminación
                 const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
                 scene.add(light);
 
-                // 2. Ancla Cuadro 0 (Espacio) - Un Toroide azul
+                // 5. ANCLA 0: CUADRO DEL ESPACIO (Toroide Azul)
                 const anchor0 = mindarThree.addAnchor(0);
                 const geometry0 = new THREE.TorusGeometry(0.3, 0.1, 16, 100);
                 const material0 = new THREE.MeshStandardMaterial({color: 0x0077ff});
                 const torus0 = new THREE.Mesh(geometry0, material0);
                 anchor0.group.add(torus0);
 
-                // 3. Ancla Cuadro 1 (Playa) - Una Esfera dorada
+                // 6. ANCLA 1: CUADRO DE LA PLAYA (Esfera Dorada)
                 const anchor1 = mindarThree.addAnchor(1);
                 const geometry1 = new THREE.SphereGeometry(0.4, 32, 32);
                 const material1 = new THREE.MeshStandardMaterial({color: 0xffd700});
                 const sphere1 = new THREE.Mesh(geometry1, material1);
                 anchor1.group.add(sphere1);
 
-                // Bucle de animación
+                // 7. Bucle de animación (Renderizado continuo)
                 renderer.setAnimationLoop(() => {
                     torus0.rotation.x += 0.02;
                     sphere1.rotation.y += 0.02;
                     renderer.render(scene, camera);
                 });
 
+                // 8. Arrancar la cámara y el rastreo
                 await mindarThree.start();
-                
-            } catch (err) {
-                console.error(err);
-                document.getElementById('error-msg').style.display = "block";
-                document.getElementById('error-msg').innerHTML = "Cámara bloqueada o error de targets.";
-            }
-        }
+                console.log("AR funcionando correctamente.");
+                document.getElementById('error-msg').style.display = "none"; // Ocultar errores si todo arranca
 
-        start();
+            } catch (err) {
+                console.error("Error al arrancar AR:", err);
+                reportarError("Error de Cámara o Targets: " + err.message);
+            }
+        };
+
+        // 9. IMPORTANTE: Esperamos a que toda la ventana y scripts carguen
+        window.onload = () => {
+            start();
+        };
     </script>
 </body>
 </html>
