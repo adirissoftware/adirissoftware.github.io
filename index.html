@@ -3,115 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Museo ADIRIS - Realidad Aumentada</title>
-    
+    <title>Museo ADIRIS - Experiencia AR</title>
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
-    
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-
-        /* Capa de Interfaz */
-        #ui-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        /* Tarjeta de Información */
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        #ui-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+        
         #info-card {
-            position: absolute;
-            bottom: -400px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85%;
-            max-width: 400px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            pointer-events: auto;
+            position: absolute; bottom: -400px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 400px; background: rgba(255, 255, 255, 0.95);
+            padding: 25px; border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); pointer-events: auto;
         }
-
         #info-card.active { bottom: 0; }
-
-        .tag {
-            background: #FFD700; color: #000; padding: 4px 8px;
-            font-size: 10px; font-weight: bold; border-radius: 4px;
-        }
-
-        /* Pantalla de carga */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; color: white; display: flex; 
-            flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 200;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #FFD700;
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
-
+        
+        .tag { background: #FFD700; color: #000; padding: 4px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; text-transform: uppercase; }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-top: 4px solid #FFD700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
-
     <div id="loading-screen">
         <div class="spinner"></div>
-        <p>Iniciando Experiencia...</p>
+        <p>Cargando Galería Interactiva...</p>
     </div>
 
     <div id="ui-overlay">
         <div id="info-card">
-            <span class="tag">Obra Detectada</span>
-            <h2 id="obra-titulo" style="margin: 10px 0; color: #222;">Cargando Obra...</h2>
-            <p id="obra-desc" style="color: #444; line-height: 1.5;">Mantén el enfoque para leer.</p>
+            <span id="obra-tag" class="tag">Espacio Exterior</span>
+            <h2 id="obra-titulo" style="margin: 10px 0; color: #111;">Título</h2>
+            <p id="obra-desc" style="color: #444; line-height: 1.6; font-size: 15px;"></p>
+            <div style="font-size: 10px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">ADIRIS Software Solutions</div>
         </div>
     </div>
 
-    <a-scene 
-        mindar-image="imageTargetSrc: ./tu_cuadro.mind; uiScanning: no;" 
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; uiScanning: no;" color-space="sRGB"
+        renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
-        
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="target-cuadro" mindar-image-target="targetIndex: 0">
-            </a-entity>
+        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+            <a-plane color="#4B0082" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
+        <a-entity id="target-1" mindar-image-target="targetIndex: 1">
+            <a-plane color="#FFD700" opacity="0.4" height="1" width="1" 
+                animation="property: opacity; to: 0.7; dir: alternate; dur: 1500; loop: true">
+            </a-plane>
+        </a-entity>
+
     </a-scene>
 
     <script>
         const card = document.getElementById('info-card');
-        const titulo = document.getElementById('obra-titulo');
-        const desc = document.getElementById('obra-desc');
         const loading = document.getElementById('loading-screen');
-        const target = document.getElementById('target-cuadro');
+        const tag = document.getElementById('obra-tag');
 
-        // Datos que se mostrarán
-        const datosMuseo = {
-            titulo: "Riquezas del Museo",
-            descripcion: "Has detectado una pieza histórica. Esta obra representa la fusión de culturas y técnicas artísticas de la época."
-        };
+        // Base de datos de tus dos cuadros
+        const obras = [
+            {
+                tag: "Cosmos e Infinito",
+                titulo: "Exploración Espacial",
+                descripcion: "Este cuadro representa la inmensidad del universo. Los colores fríos simbolizan el vacío estelar, mientras que las luces brillantes nos recuerdan que estamos hechos de polvo de estrellas."
+            },
+            {
+                tag: "Naturaleza y Relax",
+                titulo: "Un Día en la Playa",
+                descripcion: "Siente el calor del sol y la brisa marina. Esta obra captura la esencia de un verano eterno, utilizando tonos cálidos para transmitir tranquilidad y el movimiento rítmico de las olas."
+            }
+        ];
 
-        // Eventos de MindAR
-        target.addEventListener("targetFound", () => {
-            titulo.innerText = datosMuseo.titulo;
-            desc.innerText = datosMuseo.descripcion;
+        function mostrarInfo(index) {
+            tag.innerText = obras[index].tag;
+            document.getElementById('obra-titulo').innerText = obras[index].titulo;
+            document.getElementById('obra-desc').innerText = obras[index].descripcion;
             card.classList.add('active');
-        });
+        }
 
-        target.addEventListener("targetLost", () => {
+        function ocultarInfo() {
             card.classList.remove('active');
-        });
+        }
+
+        // Eventos para Cuadro 0 (Espacio)
+        const t0 = document.getElementById('target-0');
+        t0.addEventListener("targetFound", () => mostrarInfo(0));
+        t0.addEventListener("targetLost", ocultarInfo);
+
+        // Eventos para Cuadro 1 (Playa)
+        const t1 = document.getElementById('target-1');
+        t1.addEventListener("targetFound", () => mostrarInfo(1));
+        t1.addEventListener("targetLost", ocultarInfo);
 
         document.querySelector('a-scene').addEventListener("arReady", () => {
             loading.style.display = 'none';
