@@ -114,8 +114,8 @@
 
         // Eventos para Cuadro 2 (Personalidad)
         const t2 = document.getElementById('target-2');
-        t1.addEventListener("targetFound", () => mostrarInfo(2));
-        t1.addEventListener("targetLost", ocultarInfo);
+        t2.addEventListener("targetFound", () => mostrarInfo(2));
+        t2.addEventListener("targetLost", ocultarInfo);
 
         document.querySelector('a-scene').addEventListener("arReady", () => {
             loading.style.display = 'none';
